@@ -1,0 +1,17 @@
+Corp\EiisBundle\Entity\EiisSession:
+    type: entity
+    table: null
+    id:
+        id:
+            type: integer
+            id: true
+            generator:
+                strategy: AUTO
+    fields:
+        uuid:
+            type: string
+            length: '36'
+            unique: true
+        dateCreated:
+            type: datetime
+    lifecycleCallbacks: {  }

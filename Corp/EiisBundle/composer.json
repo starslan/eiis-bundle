@@ -1,0 +1,12 @@
+{
+    "name": "alxishin/eiis-bundle",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Alexander Ishin",
+            "email": "alxishin@gmail.com"
+        }
+    ],
+    "require": {}
+}
