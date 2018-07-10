@@ -8,5 +8,6 @@
             "email": "alxishin@gmail.com"
         }
     ],
-    "require": {}
+    "require": {},
+	"minimum-stability": "dev"
 }
