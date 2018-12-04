@@ -44,6 +44,7 @@ class Configuration implements ConfigurationInterface
                     ->scalarNode('getter')->end()
                     ->scalarNode('find_all_method')->end()
                     ->scalarNode('find_one_method')->isRequired()->end()
+					->scalarNode('create_object_supported')->defaultFalse()->end()
         ;
 
         return $treeBuilder;

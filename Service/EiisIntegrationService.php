@@ -38,14 +38,20 @@ class EiisIntegrationService
             $filter = $filter->asXML();
             $packageId = (string)$this->prepareResult($this->getClient()->CreatePackage(['sessionId'=>$sessionId,'objectCode'=>$notification->getSystemObjectCode(),'historyCreate'=>false,'documentInclude'=>false,'filter'=>$filter])->CreatePackageResult)->attributes()->id;
             $package = $this->getClient()->GetPackage(['sessionId'=>$sessionId,'packageId'=>$packageId,'part'=>1]);
-            usleep(1000);
+            usleep(5000);
             try{
                 $data = simplexml_load_string((string)$package->GetPackageResult, \SimpleXMLElement::class, LIBXML_COMPACT);
             }catch (\Throwable $e){
                 dump($package);
                 throw $e;
             }
-            $this->applyData($this->object2array($data), $this->getConfigByRemoteCode($notification->getSystemObjectCode()));
+			$this->getEm()->beginTransaction();
+			try{
+            	$this->applyData($this->object2array($data), $this->getConfigByRemoteCode($notification->getSystemObjectCode()));
+			}catch (\Throwable $e){
+				throw $e;
+			}
+			$this->getEm()->commit();
         }
         $this->getEm()->flush();
     }
@@ -104,7 +110,7 @@ class EiisIntegrationService
     private function applyData(array $data, array $config){
         foreach ($data as $value){
             $obj = $this->getEm()->getRepository($config['class'])->{$config['find_one_method']}($value);
-            if(!$obj){
+			if(!$obj && $config['create_object_supported']){
                 $obj = new $config['class']();
                 $this->getEm()->persist($obj);
             }
@@ -204,10 +210,15 @@ class EiisIntegrationService
         return $this->getContainer()->get('doctrine')->getConnection()->fetchColumn('select uuid()');
     }
 
-    private function addLogRecord($eiisId, $newValue, $oldValue, $systemObjectCode){
-        $log = new EiisLog();
-        $log->setEiisId($eiisId)->setNewValue($newValue)->setOldValue($oldValue)->setSystemObjectCode($systemObjectCode);
-        $this->getEm()->persist($log);
-    }
+	private function addLogRecord($eiisId, $newValue, $oldValue, $externalName, $systemObjectCode){
+		$log = new EiisLog();
+		$log
+			->setEiisId($eiisId)
+			->setNewValue($newValue)
+			->setOldValue($oldValue)
+			->setExternalName($externalName)
+			->setSystemObjectCode($systemObjectCode);
+		$this->getEm()->persist($log);
+	}
 
 }
