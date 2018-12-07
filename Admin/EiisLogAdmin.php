@@ -30,6 +30,7 @@ class EiisLogAdmin extends AbstractAdmin
             ->add('oldValue')
             ->add('newValue')
             ->add('eiisId')
+            ->add('externalName')
             ->add('dateCreated')
             ->add('_action', null, [
                 'actions' => [

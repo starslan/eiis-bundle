@@ -45,9 +45,16 @@ class EiisLog
     /**
      * @var string
      *
-     * @ORM\Column(name="EiisId", type="string", length=36)
+     * @ORM\Column(name="EiisId", type="string", length=36, nullable=true)
      */
     private $eiisId;
+
+	/**
+	 * @var string
+	 *
+	 * @ORM\Column(name="externalName", type="string", length=255)
+	 */
+	private $externalName;
 
     /**
      * @var \DateTime
@@ -195,5 +202,24 @@ class EiisLog
     {
         return $this->dateCreated;
     }
+
+	/**
+	 * @return string
+	 */
+	public function getExternalName(): string
+	{
+		return $this->externalName;
+	}
+
+	/**
+	 * @param string $externalName
+	 */
+	public function setExternalName(string $externalName)
+	{
+		$this->externalName = $externalName;
+
+		return $this;
+	}
+
 }
 
