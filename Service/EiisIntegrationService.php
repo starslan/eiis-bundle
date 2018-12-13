@@ -13,6 +13,8 @@ use Corp\EiisBundle\Entity\EiisSession;
 use Corp\EiisBundle\Entity\EiisUpdateNotification;
 use Corp\EiisBundle\Event\UpdateNotificationEvent;
 use Corp\EiisBundle\Traits\ContainerUsageTrait;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\Validator\ConstraintViolationInterface;
 
 class EiisIntegrationService
 {
@@ -48,18 +50,30 @@ class EiisIntegrationService
 					throw new \Exception('Не удалось получить пакет данных для объекта '.$notification->getSystemObjectCode());
 				}
 				$i++;
-				dump('Try #'.$i);
+				$this->getLogger()->info('Try #'.$i);
 			}
 			try{
 				$data = simplexml_load_string((string)$package->GetPackageResult, \SimpleXMLElement::class, LIBXML_COMPACT);
 			}catch (\Throwable $e){
-				dump($package);
 				throw $e;
 			}
 			$this->getEm()->beginTransaction();
 			try{
-
-				$this->applyData($this->object2array($data), $this->getConfigByRemoteCode($notification->getSystemObjectCode()));
+				$config = $this->getConfigByRemoteCode($notification->getSystemObjectCode());
+				if(!$config){
+					throw new \Exception('Config for code '.$notification->getSystemObjectCode().' not found');
+				}
+				$this->applyData($this->object2array($data), $config);
+				if($config['delete_object_supported']){
+					$this->getQb()
+						->delete($config['class'],'t')
+//						->from()
+						->where('t.eiisId is null or t.eiisId=\'\'')
+						->getQuery()
+						->execute();
+				}else{
+					$this->getLogger()->warning('Delete object not supported for class '.$config['class']);
+				}
 				$this->getEm()->flush();
 			}catch (\Throwable $e){
 				throw $e;
@@ -82,7 +96,7 @@ class EiisIntegrationService
 				return $val;
 			}
 		}
-		return false;
+		return null;
 	}
 
 	public function getConfigByLocalCode(string $localObjectCode){
@@ -121,22 +135,39 @@ class EiisIntegrationService
 	}
 
 	private function applyData(array $data, array $config){
+		$notCreatedCount = 0;
 		foreach ($data as $value){
 			$obj = $this->getEm()->getRepository($config['class'])->{$config['find_one_method']}($value);
 			if(!$obj){
 				if($config['create_object_supported']){
 					$obj = new $config['class']();
 					$this->getEm()->persist($obj);
+					if(method_exists($obj,'assignContainer')){
+						$obj->assignContainer($this->getContainer());
+					}
 				}else{
-					dump('create_object_supported is not supporter, skipping...'.print_r($data, 1));
+					$notCreatedCount++;
 					continue;
 				}
 			}
 			$logs = $obj->{$config['setter']}($value);
+			$errors = $this->getContainer()->get('validator')->validate($obj);
+			if($errors->count() > 0){
+				/** @var ConstraintViolationInterface $error */
+				foreach ($errors as $error){
+					$this->getLogger()->warning('Cant create object '.$config['class'].': '.$error->getPropertyPath().' '.$error->getMessage());
+				}
+				$this->getEm()->detach($obj);
+				continue;
+			}
+
 			foreach ($logs as $log){
 				$log[] = $config['remote_code'];
 				$this->addLogRecord(...$log);
 			}
+		}
+		if($notCreatedCount > 0){
+			$this->getLogger()->warning('Not Created Count: '.$notCreatedCount);
 		}
 	}
 
@@ -237,6 +268,25 @@ class EiisIntegrationService
 			->setExternalName($externalName)
 			->setSystemObjectCode($systemObjectCode);
 		$this->getEm()->persist($log);
+	}
+
+	/** @var LoggerInterface */
+	private $logger;
+
+	/**
+	 * @return LoggerInterface
+	 */
+	private function getLogger(): LoggerInterface
+	{
+		return $this->logger;
+	}
+
+	/**
+	 * @param LoggerInterface $logger
+	 */
+	public function setLogger(LoggerInterface $logger)
+	{
+		$this->logger = $logger;
 	}
 
 }
