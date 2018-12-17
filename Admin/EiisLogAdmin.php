@@ -7,16 +7,14 @@ use Sonata\AdminBundle\Datagrid\DatagridMapper;
 use Sonata\AdminBundle\Datagrid\ListMapper;
 use Sonata\AdminBundle\Form\FormMapper;
 use Sonata\AdminBundle\Show\ShowMapper;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 
 class EiisLogAdmin extends AbstractAdmin
 {
     protected function configureDatagridFilters(DatagridMapper $datagridMapper)
     {
         $datagridMapper
-            ->add('id')
             ->add('systemObjectCode')
-            ->add('oldValue')
-            ->add('newValue')
             ->add('eiisId')
             ->add('dateCreated')
         ;
@@ -25,20 +23,16 @@ class EiisLogAdmin extends AbstractAdmin
     protected function configureListFields(ListMapper $listMapper)
     {
         $listMapper
-            ->add('id')
+//            ->add('id')
             ->add('systemObjectCode')
-            ->add('oldValue')
-            ->add('newValue')
             ->add('eiisId')
-            ->add('externalName')
-            ->add('dateCreated')
-            ->add('_action', null, [
-                'actions' => [
-                    'show' => [],
-                    'edit' => [],
-                    'delete' => [],
-                ],
-            ])
+			->add('logHistory','1234',['template'=>'CorpEiisBundle:Admin:logHistory.html.twig'])
+//            ->add('dateCreated')
+//            ->add('_action', null, [
+//                'actions' => [
+//                    'show' => []
+//                ],
+//            ])
         ;
     }
 
@@ -50,10 +44,7 @@ class EiisLogAdmin extends AbstractAdmin
     protected function configureShowFields(ShowMapper $showMapper)
     {
         $showMapper
-            ->add('id')
             ->add('systemObjectCode')
-            ->add('oldValue')
-            ->add('newValue')
             ->add('eiisId')
             ->add('dateCreated')
         ;

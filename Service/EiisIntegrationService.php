@@ -24,6 +24,12 @@ class EiisIntegrationService
 
 	private $config;
 
+	/** @var \DateTime */
+	private $date;
+
+	/** @var LoggerInterface */
+	private $logger;
+
 	public function setConfig(array $config){
 		$this->config = $config;
 	}
@@ -33,6 +39,7 @@ class EiisIntegrationService
 	}
 
 	public function eiisUpdateLocalData(){
+		$this->date = new \DateTime();
 		$updateNotifications = $this->getEm()->getRepository(EiisUpdateNotification::class)->findBy(['signalFrom'=>UpdateNotificationEvent::SIGNAL_FROM_EXTERNAL]);
 		foreach ($updateNotifications as $notification){
 			$sessionId = $this->getSessionId();
@@ -153,18 +160,20 @@ class EiisIntegrationService
 			$logs = $obj->{$config['setter']}($value);
 			$errors = $this->getContainer()->get('validator')->validate($obj);
 			if($errors->count() > 0){
+				$message = [];
 				/** @var ConstraintViolationInterface $error */
 				foreach ($errors as $error){
+					$message[] = $error->getPropertyPath().' '.$error->getMessage();
 					$this->getLogger()->warning('CREATE '.$config['class'].'#'.$obj->getEiisid().' '.$error->getPropertyPath().' '.$error->getMessage());
 				}
 				$this->getEm()->detach($obj);
+				$this->addLogHistory($obj->getEiisId(), $config['remote_code'], 'warning', implode('; ', $message));
 				unset($obj);
 				continue;
 			}
 
 			foreach ($logs as $log){
-				$log[] = $config['remote_code'];
-				$this->addLogRecord(...$log);
+				$this->addLogHistory($obj->getEiisId(),$config['remote_code'],'info',$log[3].': "'.$log[2].'" -> "'.$log[1].'"');
 			}
 		}
 		if($notCreatedCount > 0){
@@ -260,20 +269,6 @@ class EiisIntegrationService
 		return $this->getContainer()->get('doctrine')->getConnection()->fetchColumn('select uuid()');
 	}
 
-	private function addLogRecord($eiisId, $newValue, $oldValue, $externalName, $systemObjectCode){
-		$log = new EiisLog();
-		$log
-			->setEiisId($eiisId)
-			->setNewValue($newValue)
-			->setOldValue($oldValue)
-			->setExternalName($externalName)
-			->setSystemObjectCode($systemObjectCode);
-		$this->getEm()->persist($log);
-	}
-
-	/** @var LoggerInterface */
-	private $logger;
-
 	/**
 	 * @return LoggerInterface
 	 */
@@ -290,4 +285,15 @@ class EiisIntegrationService
 		$this->logger = $logger;
 	}
 
+	private function addLogHistory($eiisid, $remoteCode, $type, $message){
+		$log = $this->getEm()->getRepository(EiisLog::class)->findOneBy(['eiisId'=>$eiisid,'systemObjectCode'=>$remoteCode]);
+		if(!$log){
+			$log = (new EiisLog())->setSystemObjectCode($remoteCode)->setEiisId($eiisid);
+			$this->getEm()->persist($log);
+		}
+		$array = $log->getLoghistory();
+		$array[$this->date->format('c')][] = ['type'=>$type,'message'=>$message];
+		$log->setLoghistory($array);
+		$this->getEm()->flush($log);
+	}
 }

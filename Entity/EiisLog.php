@@ -28,40 +28,49 @@ class EiisLog
      */
     private $systemObjectCode;
 
-    /**
-     * @var string
-     *
-     * @ORM\Column(name="oldValue", type="text", nullable=true)
-     */
-    private $oldValue;
-
-    /**
-     * @var string
-     *
-     * @ORM\Column(name="newValue", type="text", nullable=true)
-     */
-    private $newValue;
-
-    /**
-     * @var string
-     *
-     * @ORM\Column(name="EiisId", type="string", length=36, nullable=true)
-     */
-    private $eiisId;
+	/**
+	 * @var array
+	 * @ORM\Column(name="loghistory", type="json_array")
+	 */
+	private $loghistory;
 
 	/**
 	 * @var string
 	 *
-	 * @ORM\Column(name="externalName", type="string", length=255)
+	 * @ORM\Column(name="EiisId", type="string", length=36, nullable=true)
 	 */
-	private $externalName;
+	private $eiisId;
 
-    /**
-     * @var \DateTime
-     *
-     * @ORM\Column(name="dateCreated", type="datetime")
-     */
-    private $dateCreated;
+	/**
+	 * @var \DateTime
+	 *
+	 * @ORM\Column(name="dateCreated", type="datetime")
+	 */
+	private $dateCreated;
+
+	/**
+	 * Set loghistory
+	 *
+	 * @param array $loghistory
+	 *
+	 * @return $this
+	 */
+	public function setLoghistory($loghistory)
+	{
+		$this->loghistory = $loghistory;
+
+		return $this;
+	}
+
+	/**
+	 * Get loghistory
+	 *
+	 * @return array
+	 */
+	public function getLoghistory()
+	{
+		return $this->loghistory;
+	}
 
     /**
      * EiisLog constructor.
@@ -71,7 +80,6 @@ class EiisLog
     {
         $this->dateCreated = new \DateTime();
     }
-
 
     /**
      * Get id
@@ -105,54 +113,6 @@ class EiisLog
     public function getSystemObjectCode()
     {
         return $this->systemObjectCode;
-    }
-
-    /**
-     * Set oldValue
-     *
-     * @param string $oldValue
-     *
-     * @return EiisLog
-     */
-    public function setOldValue($oldValue)
-    {
-        $this->oldValue = $oldValue;
-
-        return $this;
-    }
-
-    /**
-     * Get oldValue
-     *
-     * @return string
-     */
-    public function getOldValue()
-    {
-        return $this->oldValue;
-    }
-
-    /**
-     * Set newValue
-     *
-     * @param string $newValue
-     *
-     * @return EiisLog
-     */
-    public function setNewValue($newValue)
-    {
-        $this->newValue = $newValue;
-
-        return $this;
-    }
-
-    /**
-     * Get newValue
-     *
-     * @return string
-     */
-    public function getNewValue()
-    {
-        return $this->newValue;
     }
 
     /**
@@ -202,24 +162,4 @@ class EiisLog
     {
         return $this->dateCreated;
     }
-
-	/**
-	 * @return string
-	 */
-	public function getExternalName(): string
-	{
-		return $this->externalName;
-	}
-
-	/**
-	 * @param string $externalName
-	 */
-	public function setExternalName(string $externalName)
-	{
-		$this->externalName = $externalName;
-
-		return $this;
-	}
-
 }
-
