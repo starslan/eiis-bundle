@@ -155,9 +155,10 @@ class EiisIntegrationService
 			if($errors->count() > 0){
 				/** @var ConstraintViolationInterface $error */
 				foreach ($errors as $error){
-					$this->getLogger()->warning('Cant create object '.$config['class'].': '.$error->getPropertyPath().' '.$error->getMessage());
+					$this->getLogger()->warning('CREATE '.$config['class'].'#'.$obj->getEiisid().' '.$error->getPropertyPath().' '.$error->getMessage());
 				}
 				$this->getEm()->detach($obj);
+				unset($obj);
 				continue;
 			}
 
